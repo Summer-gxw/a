@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>积分管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.tailwindcss.com?plugins=forms" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- 配置Tailwind自定义颜色和字体 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#36CFC9',
+            success: '#52C41A',
+            warning: '#FAAD14',
+            danger: '#FF4D4F',
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .card-shadow {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      }
+      .btn-effect {
+        @apply transition-all duration-200 active:scale-95;
+      }
+      .menu-item {
+        @apply w-16 h-16 rounded-full flex items-center justify-center shadow-lg btn-effect text-xl;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 min-h-screen touch-manipulation">
+  <!-- 时间页面 -->
+  <div id="time-page" class="h-screen flex flex-col items-center justify-center p-6">
+    <div class="text-center mb-10">
+      <h1 class="text-[clamp(2rem,6vw,3rem)] font-bold text-gray-800 mb-4">积分管理系统</h1>
+      <div class="text-5xl font-light text-gray-700 mb-6" id="current-time">00:00:00</div>
+      <div class="text-gray-500 text-xl" id="current-date">2025年11月3日 星期一</div>
+    </div>
+    
+    <button id="start-class-btn" class="bg-primary text-white py-5 px-12 rounded-xl text-xl font-medium btn-effect w-full max-w-xs">
+      <i class="fa fa-play-circle mr-2"></i> 开始上课
+    </button>
+  </div>
+
+  <!-- 主界面 -->
+  <div id="main-page" class="h-screen p-6 hidden flex flex-col">
+    <header class="py-4 mb-6">
+      <h1 class="text-[clamp(1.5rem,4vw,2rem)] font-bold text-primary">
+        <i class="fa fa-trophy mr-2 text-warning"></i>学生积分
+      </h1>
+    </header>
+
+    <!-- 学生选择区 -->
+    <div class="flex-1 flex flex-col justify-center mb-6">
+      <h2 class="text-lg font-semibold text-gray-700 mb-6 text-center">选择学生</h2>
+      <div class="grid grid-cols-3 gap-6">
+        <!-- 学生A -->
+        <div class="student-card bg-white rounded-xl p-6 card-shadow text-center cursor-pointer btn-effect" data-student="a">
+          <div class="w-20 h-20 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4">
+            <span class="text-3xl font-bold">A</span>
+          </div>
+          <h3 class="font-medium text-gray-800">航航</h3>
+        </div>
+        
+        <!-- 学生B -->
+        <div class="student-card bg-white rounded-xl p-6 card-shadow text-center cursor-pointer btn-effect" data-student="b">
+          <div class="w-20 h-20 mx-auto rounded-full bg-secondary/10 flex items-center justify-center text-secondary mb-4">
+            <span class="text-3xl font-bold">B</span>
+          </div>
+          <h3 class="font-medium text-gray-800">夏天</h3>
+        </div>
+        
+        <!-- 学生C -->
+        <div class="student-card bg-white rounded-xl p-6 card-shadow text-center cursor-pointer btn-effect" data-student="c">
+          <div class="w-20 h-20 mx-auto rounded-full bg-warning/10 flex items-center justify-center text-warning mb-4">
+            <span class="text-3xl font-bold">C</span>
+          </div>
+          <h3 class="font-medium text-gray-800">可乐</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- 最近记录区 -->
+    <div class="mb-8">
+      <h2 class="text-lg font-semibold text-gray-700 mb-4">最近记录</h2>
+      <div class="bg-white rounded-xl p-4 card-shadow max-h-36 overflow-y-auto">
+        <table class="min-w-full">
+          <thead>
+            <tr class="text-xs text-gray-500 border-b">
+              <th class="pb-2 text-left">时间</th>
+              <th class="pb-2 text-left">学生</th>
+              <th class="pb-2 text-left">积分</th>
+            </tr>
+          </thead>
+          <tbody id="recent-records">
+            <tr class="text-center text-gray-500">
+              <td colspan="3" class="py-4">暂无记录</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 底部按钮区 -->
+    <div class="flex justify-center space-x-6 mb-4">
+      <button id="view-all-records" class="bg-white border border-primary text-primary py-3 px-6 rounded-lg font-medium btn-effect">
+        <i class="fa fa-history mr-1"></i> 全部记录
+      </button>
+    </div>
+
+    <!-- 右下角菜单 -->
+    <div class="fixed bottom-6 right-6">
+      <button id="menu-toggle" class="bg-primary text-white menu-item">
+        <i class="fa fa-bars"></i>
+      </button>
+      
+      <div id="menu-items" class="hidden absolute bottom-20 right-0 flex flex-col items-end gap-4">
+        <button id="go-home" class="bg-white text-primary menu-item">
+          <i class="fa fa-home"></i>
+        </button>
+        <button id="show-ranking" class="bg-white text-warning menu-item">
+          <i class="fa fa-trophy"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 排行榜界面 -->
+  <div id="ranking-page" class="h-screen p-6 hidden flex flex-col">
+    <header class="py-4 mb-6">
+      <button id="back-from-ranking" class="text-gray-600 mb-2 btn-effect inline-flex items-center">
+        <i class="fa fa-arrow-left mr-1"></i> 返回
+      </button>
+      <h1 class="text-[clamp(1.5rem,4vw,2rem)] font-bold text-primary">
+        <i class="fa fa-trophy mr-2 text-warning"></i>积分排行榜
+      </h1>
+    </header>
+
+    <!-- 前三名 -->
+    <div class="flex-1 flex flex-col md:flex-row items-center justify-around mb-8">
+      <!-- 第二名 -->
+      <div class="bg-white rounded-xl p-4 card-shadow text-center w-full md:w-1/3 max-w-[120px] mb-4 md:mb-0">
+        <div class="w-10 h-10 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-2">
+          <span class="text-sm font-bold text-gray-500">2nd</span>
+        </div>
+        <div id="second-place" class="font-bold text-sm mb-1">夏天</div>
+        <div id="second-score" class="text-2xl font-bold text-gray-600">0</div>
+      </div>
+      
+      <!-- 第一名 -->
+      <div class="bg-white rounded-xl p-5 card-shadow text-center w-full md:w-1/3 max-w-[140px] mb-4 md:mb-0">
+        <div class="w-12 h-12 mx-auto bg-warning/20 rounded-full flex items-center justify-center mb-3">
+          <span class="text-sm font-bold text-warning">1st</span>
+        </div>
+        <div id="first-place" class="font-bold text-sm mb-1">航航</div>
+        <div id="first-score" class="text-3xl font-bold text-warning">0</div>
+      </div>
+      
+      <!-- 第三名 -->
+      <div class="bg-white rounded-xl p-4 card-shadow text-center w-full md:w-1/3 max-w-[120px]">
+        <div class="w-10 h-10 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-2">
+          <span class="text-sm font-bold text-amber-600">3rd</span>
+        </div>
+        <div id="third-place" class="font-bold text-sm mb-1">可乐</div>
+        <div id="third-score" class="text-2xl font-bold text-amber-600">0</div>
+      </div>
+    </div>
+
+    <!-- 完整排名 -->
+    <div class="mb-6">
+      <div class="bg-white rounded-xl p-4 card-shadow max-h-40 overflow-y-auto">
+        <table class="min-w-full">
+          <thead>
+            <tr class="text-xs text-gray-500 border-b">
+              <th class="pb-2 text-left w-12">排名</th>
+              <th class="pb-2 text-left">学生</th>
+              <th class="pb-2 text-left">积分</th>
+            </tr>
+          </thead>
+          <tbody id="full-ranking">
+            <!-- 排名数据将动态生成 -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 右下角菜单 -->
+    <div class="fixed bottom-6 right-6">
+      <button id="ranking-menu-toggle" class="bg-primary text-white menu-item">
+        <i class="fa fa-bars"></i>
+      </button>
+      
+      <div id="ranking-menu-items" class="hidden absolute bottom-20 right-0 flex flex-col items-end gap-4">
+        <button id="ranking-go-home" class="bg-white text-primary menu-item">
+          <i class="fa fa-home"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 个人积分操作界面 -->
+  <div id="student-page" class="h-screen p-6 hidden flex flex-col">
+    <header class="py-4 mb-4">
+      <button id="back-to-main" class="text-gray-600 mb-2 btn-effect inline-flex items-center">
+        <i class="fa fa-arrow-left mr-1"></i> 返回
+      </button>
+      <h1 class="text-[clamp(1.5rem,4vw,2rem)] font-bold text-primary">
+        <i class="fa fa-trophy mr-2 text-warning"></i>积分操作
+      </h1>
+    </header>
+
+    <!-- 学生信息 -->
+    <div class="bg-white rounded-xl p-4 card-shadow mb-6">
+      <div class="flex items-center">
+        <div id="student-avatar" class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mr-4">
+          <span class="text-2xl font-bold">A</span>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-800" id="student-name">航航</h2>
+          <p class="text-gray-500">当前积分: <span id="student-current-score" class="font-medium text-primary">0</span></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主要操作区 -->
+    <div class="flex-1 flex flex-col">
+      <!-- 积分操作按钮 -->
+      <div class="mb-6">
+        <h3 class="text-sm font-medium text-gray-500 mb-3">选择任务</h3>
+        <div class="space-y-3">
+          <button id="add-3-points" class="w-full bg-white border border-gray-300 text-gray-400 py-3 px-4 rounded-lg font-medium opacity-50 cursor-not-allowed flex justify-between items-center" disabled>
+            <span>完成一篇计算</span>
+            <span class="bg-gray-100 px-3 py-1 rounded-full text-sm">+3分</span>
+          </button>
+          
+          <button id="add-1-point" class="w-full bg-white border border-gray-300 text-gray-400 py-3 px-4 rounded-lg font-medium opacity-50 cursor-not-allowed flex justify-between items-center" disabled>
+            <span>计算全对</span>
+            <span class="bg-gray-100 px-3 py-1 rounded-full text-sm">+1分</span>
+          </button>
+          
+          <button id="add-other" class="w-full bg-white border border-gray-300 text-gray-400 py-3 px-4 rounded-lg font-medium opacity-50 cursor-not-allowed flex justify-between items-center" disabled>
+            <span>其他任务</span>
+            <span class="bg-gray-100 px-3 py-1 rounded-full text-sm">自定义</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 图片上传区 -->
+      <div>
+        <h3 class="text-sm font-medium text-gray-500 mb-3">上传证明图片 <span class="text-red-500 text-xs">(必填)</span></h3>
+        <div id="drop-area" class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary transition-colors">
+          <i class="fa fa-cloud-upload text-2xl text-gray-400 mb-2"></i>
+          <p class="text-gray-500 text-sm mb-3">点击或拖放图片</p>
+          <label class="bg-primary text-white py-2 px-4 rounded-lg cursor-pointer btn-effect text-sm inline-block">
+            选择图片
+            <input type="file" id="file-input" accept="image/*" class="hidden">
+          </label>
+        </div>
+        
+        <!-- 图片预览区 -->
+        <div id="preview-container" class="mt-3 hidden">
+          <img id="image-preview" src="" alt="预览图" class="max-w-full max-h-32 rounded-lg shadow">
+          <button id="clear-image" class="text-gray-500 hover:text-red-500 text-sm mt-2 inline-flex items-center btn-effect">
+            <i class="fa fa-trash mr-1"></i> 清除图片
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右下角菜单 -->
+    <div class="fixed bottom-6 right-6">
+      <button id="student-menu-toggle" class="bg-primary text-white menu-item">
+        <i class="fa fa-bars"></i>
+      </button>
+      
+      <div id="student-menu-items" class="hidden absolute bottom-20 right-0 flex flex-col items-end gap-4">
+        <button id="student-go-home" class="bg-white text-primary menu-item">
+          <i class="fa fa-home"></i>
+        </button>
+        <button id="student-show-ranking" class="bg-white text-warning menu-item">
+          <i class="fa fa-trophy"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 全部记录界面 -->
+  <div id="all-records-page" class="h-screen p-6 hidden flex flex-col">
+    <header class="py-4 mb-6">
+      <button id="back-from-records" class="text-gray-600 mb-2 btn-effect inline-flex items-center">
+        <i class="fa fa-arrow-left mr-1"></i> 返回
+      </button>
+      <h1 class="text-[clamp(1.5rem,4vw,2rem)] font-bold text-primary">
+        <i class="fa fa-history mr-2"></i>全部积分记录
+      </h1>
+    </header>
+
+    <!-- 记录列表 -->
+    <div class="flex-1 bg-white rounded-xl p-4 card-shadow overflow-y-auto">
+      <table class="min-w-full">
+        <thead>
+          <tr class="text-xs text-gray-500 border-b">
+            <th class="pb-2 text-left">时间</th>
+            <th class="pb-2 text-left">学生</th>
+            <th class="pb-2 text-left">任务</th>
+            <th class="pb-2 text-left">积分</th>
+            <th class="pb-2 text-left">证明</th>
+          </tr>
+        </thead>
+        <tbody id="all-records-list">
+          <tr class="text-center text-gray-500">
+            <td colspan="5" class="py-8">暂无记录</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 右下角菜单 -->
+    <div class="fixed bottom-6 right-6">
+      <button id="records-menu-toggle" class="bg-primary text-white menu-item">
+        <i class="fa fa-bars"></i>
+      </button>
+      
+      <div id="records-menu-items" class="hidden absolute bottom-20 right-0 flex flex-col items-end gap-4">
+        <button id="records-go-home" class="bg-white text-primary menu-item">
+          <i class="fa fa-home"></i>
+        </button>
+        <button id="records-show-ranking" class="bg-white text-warning menu-item">
+          <i class="fa fa-trophy"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 图片查看弹窗 -->
+  <div id="image-modal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center hidden">
+    <button id="close-image-modal" class="absolute top-4 right-4 text-white text-2xl">
+      <i class="fa fa-times"></i>
+    </button>
+    <img id="modal-image" src="" alt="证明图片" class="max-w-[90%] max-h-[90vh] object-contain">
+  </div>
+
+  <!-- 自定义积分弹窗 -->
+  <div id="custom-score-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl p-5 w-full max-w-sm mx-4">
+      <h3 class="text-lg font-semibold text-gray-800 mb-3">自定义积分</h3>
+      
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">积分数量</label>
+          <input type="number" id="custom-score" min="1" value="1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">任务说明</label>
+          <input type="text" id="task-description" placeholder="例如：完成额外练习" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary">
+        </div>
+        
+        <div class="flex gap-3 mt-4">
+          <button id="cancel-custom" class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg font-medium btn-effect">取消</button>
+          <button id="confirm-custom" class="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium btn-effect">确认</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 存储积分数据
+    const scoreData = {
+      a: 0,
+      b: 0,
+      c: 0,
+      records: [] // 每条记录包含: id, student, time, task, points, image
+    };
+    
+    // 当前选中的学生
+    let currentStudent = 'a';
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', function() {
+      initDateTimeDisplay();
+      initEventListeners();
+      
+      // 从本地存储加载数据
+      loadDataFromLocalStorage();
+      updateAllDisplays();
+    });
+
+    // 初始化日期时间显示
+    function initDateTimeDisplay() {
+      // 更新日期
+      const now = new Date();
+      const dateOptions = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+      document.getElementById('current-date').textContent = now.toLocaleDateString('zh-CN', dateOptions);
+      
+      // 更新时间并每秒刷新
+      updateTime();
+      setInterval(updateTime, 1000);
+    }
+
+    // 更新时间显示
+    function updateTime() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const seconds = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('current-time').textContent = `${hours}:${minutes}:${seconds}`;
+    }
+
+    // 初始化事件监听
+    function initEventListeners() {
+      // 页面切换
+      document.getElementById('start-class-btn').addEventListener('click', () => switchPage('time-page', 'main-page'));
+      document.getElementById('back-to-main').addEventListener('click', () => switchPage('student-page', 'main-page'));
+      document.getElementById('view-all-records').addEventListener('click', () => switchPage('main-page', 'all-records-page'));
+      document.getElementById('back-from-records').addEventListener('click', () => switchPage('all-records-page', 'main-page'));
+      document.getElementById('back-from-ranking').addEventListener('click', () => switchPage('ranking-page', 'main-page'));
+      
+      // 底部菜单切换
+      setupBottomMenu('menu-toggle', 'menu-items');
+      setupBottomMenu('ranking-menu-toggle', 'ranking-menu-items');
+      setupBottomMenu('student-menu-toggle', 'student-menu-items');
+      setupBottomMenu('records-menu-toggle', 'records-menu-items');
+      
+      // 底部菜单按钮功能
+      document.getElementById('go-home').addEventListener('click', () => {
+        closeAllMenus();
+        switchPage('main-page', 'time-page');
+      });
+      
+      document.getElementById('show-ranking').addEventListener('click', () => {
+        closeAllMenus();
+        updateRanking();
+        switchPage('main-page', 'ranking-page');
+      });
+      
+      document.getElementById('ranking-go-home').addEventListener('click', () => {
+        closeAllMenus();
+        switchPage('ranking-page', 'time-page');
+      });
+      
+      document.getElementById('student-go-home').addEventListener('click', () => {
+        closeAllMenus();
+        switchPage('student-page', 'time-page');
+      });
+      
+      document.getElementById('student-show-ranking').addEventListener('click', () => {
+        closeAllMenus();
+        updateRanking();
+        switchPage('student-page', 'ranking-page');
+      });
+      
+      document.getElementById('records-go-home').addEventListener('click', () => {
+        closeAllMenus();
+        switchPage('all-records-page', 'time-page');
+      });
+      
+      document.getElementById('records-show-ranking').addEventListener('click', () => {
+        closeAllMenus();
+        updateRanking();
+        switchPage('all-records-page', 'ranking-page');
+      });
+      
+      // 学生选择
+      document.querySelectorAll('.student-card').forEach(card => {
+        card.addEventListener('click', function() {
+          currentStudent = this.getAttribute('data-student');
+          loadStudentPage(currentStudent);
+          switchPage('main-page', 'student-page');
+        });
+      });
+      
+      // 积分操作按钮
+      document.getElementById('add-3-points').addEventListener('click', () => addPoints(currentStudent, 3, '完成一篇计算'));
+      document.getElementById('add-1-point').addEventListener('click', () => addPoints(currentStudent, 1, '计算全对'));
+      document.getElementById('add-other').addEventListener('click', () => showCustomScoreModal(currentStudent));
+      
+      // 图片上传
+      const dropArea = document.getElementById('drop-area');
+      const fileInput = document.getElementById('file-input');
+      
+      // 点击上传区域触发文件选择
+      dropArea.addEventListener('click', (e) => {
+        if (!e.target.closest('label')) {
+          fileInput.click();
+        }
+      });
+      
+      // 阻止拖放默认行为
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+      
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      // 高亮拖放区域
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+      });
+      
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+      });
+      
+      function highlight() {
+        dropArea.classList.add('border-primary');
+        dropArea.classList.add('bg-primary/5');
+      }
+      
+      function unhighlight() {
+        dropArea.classList.remove('border-primary');
+        dropArea.classList.remove('bg-primary/5');
+      }
+      
+      // 处理文件上传
+      dropArea.addEventListener('drop', handleDrop, false);
+      fileInput.addEventListener('change', handleFiles, false);
+      
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles({ target: { files } });
+      }
+      
+      function handleFiles(e) {
+        const files = e.target.files;
+        if (files.length > 0) {
+          const file = files[0];
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+              document.getElementById('image-preview').src = e.target.result;
+              document.getElementById('preview-container').classList.remove('hidden');
+              enableScoreButtons();
+            }
+            
+            reader.readAsDataURL(file);
+          } else {
+            alert('请上传图片文件');
+          }
+        }
+      }
+      
+      // 清除图片
+      document.getElementById('clear-image').addEventListener('click', function() {
+        document.getElementById('image-preview').src = '';
+        document.getElementById('preview-container').classList.add('hidden');
+        fileInput.value = '';
+        disableScoreButtons();
+      });
+      
+      // 自定义积分弹窗
+      document.getElementById('cancel-custom').addEventListener('click', hideCustomScoreModal);
+      document.getElementById('confirm-custom').addEventListener('click', confirmCustomScore);
+      
+      // 图片查看弹窗
+      document.getElementById('close-image-modal').addEventListener('click', hideImageModal);
+      document.getElementById('image-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          hideImageModal();
+        }
+      });
+    }
+
+    // 设置底部菜单
+    function setupBottomMenu(toggleId, itemsId) {
+      const toggle = document.getElementById(toggleId);
+      const items = document.getElementById(itemsId);
+      
+      toggle.addEventListener('click', function() {
+        // 关闭其他所有菜单
+        document.querySelectorAll('[id$="-menu-items"]').forEach(menu => {
+          if (menu.id !== itemsId) {
+            menu.classList.add('hidden');
+          }
+        });
+        
+        // 切换当前菜单
+        items.classList.toggle('hidden');
+      });
+    }
+
+    // 关闭所有菜单
+    function closeAllMenus() {
+      document.querySelectorAll('[id$="-menu-items"]').forEach(menu => {
+        menu.classList.add('hidden');
+      });
+    }
+
+    // 切换页面
+    function switchPage(hidePageId, showPageId) {
+      closeAllMenus();
+      document.getElementById(hidePageId).classList.add('hidden');
+      document.getElementById(showPageId).classList.remove('hidden');
+    }
+
+    // 加载学生页面数据
+    function loadStudentPage(student) {
+      // 设置学生信息
+      const studentName = document.getElementById('student-name');
+      const studentAvatar = document.getElementById('student-avatar');
+      const studentScore = document.getElementById('student-current-score');
+      
+      // 根据学生设置不同的样式
+      let colorClass = 'text-primary bg-primary/10';
+      if (student === 'b') colorClass = 'text-secondary bg-secondary/10';
+      if (student === 'c') colorClass = 'text-warning bg-warning/10';
+      
+      studentName.textContent = `学生 ${student.toUpperCase()}`;
+      studentAvatar.className = `w-16 h-16 rounded-full ${colorClass.split(' ')[1]} flex items-center justify-center ${colorClass.split(' ')[0]}`;
+      studentAvatar.innerHTML = `<span class="text-2xl font-bold">${student.toUpperCase()}</span>`;
+      studentScore.textContent = scoreData[student];
+      studentScore.className = `font-medium ${colorClass.split(' ')[0]}`;
+      
+      // 重置图片上传区域
+      document.getElementById('image-preview').src = '';
+      document.getElementById('preview-container').classList.add('hidden');
+      document.getElementById('file-input').value = '';
+      disableScoreButtons();
+    }
+
+    // 启用积分按钮
+    function enableScoreButtons() {
+      const buttons = [
+        document.getElementById('add-3-points'),
+        document.getElementById('add-1-point'),
+        document.getElementById('add-other')
+      ];
+      
+      // 根据当前学生设置按钮颜色
+      let primaryColor = 'primary';
+      if (currentStudent === 'b') primaryColor = 'secondary';
+      if (currentStudent === 'c') primaryColor = 'warning';
+      
+      buttons.forEach(btn => {
+        btn.disabled = false;
+        btn.classList.remove('border-gray-300', 'text-gray-400', 'opacity-50', 'cursor-not-allowed');
+        
+        // 设置按钮样式
+        if (btn.id === 'add-3-points') {
+          btn.classList.add(`border-${primaryColor}`, `text-${primaryColor}`);
+        } else if (btn.id === 'add-1-point') {
+          btn.classList.add('border-success', 'text-success');
+        } else {
+          btn.classList.add('border-gray-300', 'text-gray-700');
+        }
+        
+        btn.classList.add('btn-effect');
+      });
+    }
+
+    // 禁用积分按钮
+    function disableScoreButtons() {
+      const buttons = [
+        document.getElementById('add-3-points'),
+        document.getElementById('add-1-point'),
+        document.getElementById('add-other')
+      ];
+      
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.remove(`border-primary`, `text-primary`, `border-secondary`, `text-secondary`,
+                            `border-warning`, `text-warning`, `border-success`, `text-success`,
+                            `border-gray-300`, `text-gray-700`, 'btn-effect');
+        btn.classList.add('border-gray-300', 'text-gray-400', 'opacity-50', 'cursor-not-allowed');
+      });
+    }
+
+    // 添加积分
+    function addPoints(student, points, task) {
+      // 获取当前上传的图片
+      const imageSrc = document.getElementById('image-preview').src;
+      if (!imageSrc) {
+        alert('请先上传验证图片');
+        return;
+      }
+      
+      // 更新积分
+      scoreData[student] += points;
+      
+      // 记录积分变动及图片
+      const now = new Date();
+      const timeStr = now.toLocaleString('zh-CN');
+      
+      const record = {
+        id: Date.now(),
+        student: student,
+        time: timeStr,
+        task: task,
+        points: points,
+        image: imageSrc
+      };
+      
+      scoreData.records.unshift(record);
+      
+      // 保存数据
+      saveDataToLocalStorage();
+      
+      // 更新所有显示
+      updateAllDisplays();
+      
+      // 重置图片区域
+      document.getElementById('image-preview').src = '';
+      document.getElementById('preview-container').classList.add('hidden');
+      document.getElementById('file-input').value = '';
+      disableScoreButtons();
+      
+      // 提示成功
+      alert(`已添加 ${points} 分`);
+    }
+
+    // 更新排行榜
+    function updateRanking() {
+      // 创建学生积分数组
+      const students = [
+        { id: 'a', name: '航航', score: scoreData.a, color: 'primary' },
+        { id: 'b', name: '夏天', score: scoreData.b, color: 'secondary' },
+        { id: 'c', name: '可乐', score: scoreData.c, color: 'warning' }
+      ];
+      
+      // 按积分排序
+      students.sort((a, b) => b.score - a.score);
+      
+      // 更新前三名
+      if (students.length >= 1) {
+        document.getElementById('first-place').textContent = students[0].name;
+        document.getElementById('first-score').textContent = students[0].score;
+      }
+      
+      if (students.length >= 2) {
+        document.getElementById('second-place').textContent = students[1].name;
+        document.getElementById('second-score').textContent = students[1].score;
+      }
+      
+      if (students.length >= 3) {
+        document.getElementById('third-place').textContent = students[2].name;
+        document.getElementById('third-score').textContent = students[2].score;
+      }
+      
+      // 更新完整排行榜
+      const rankingContainer = document.getElementById('full-ranking');
+      rankingContainer.innerHTML = '';
+      
+      students.forEach((student, index) => {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50 text-sm';
+        
+        // 排名样式
+        let rankStyle = 'bg-gray-100 text-gray-600';
+        if (index === 0) rankStyle = 'bg-warning/20 text-warning';
+        else if (index === 1) rankStyle = 'bg-gray-100 text-gray-600';
+        else if (index === 2) rankStyle = 'bg-amber-100 text-amber-600';
+        
+        row.innerHTML = `
+          <td class="py-3">
+            <div class="w-6 h-6 rounded-full ${rankStyle} flex items-center justify-center text-xs font-bold">
+              ${index + 1}
+            </div>
+          </td>
+          <td class="py-3 text-${student.color} font-medium">${student.name}</td>
+          <td class="py-3 font-bold">${student.score}</td>
+        `;
+        
+        rankingContainer.appendChild(row);
+      });
+    }
+
+    // 更新所有显示
+    function updateAllDisplays() {
+      // 更新学生页面的积分
+      if (!document.getElementById('student-page').classList.contains('hidden')) {
+        document.getElementById('student-current-score').textContent = scoreData[currentStudent];
+      }
+      
+      // 更新最近记录
+      updateRecentRecords();
+      
+      // 更新全部记录
+      updateAllRecordsList();
+    }
+
+    // 更新最近记录
+    function updateRecentRecords() {
+      const recordsContainer = document.getElementById('recent-records');
+      recordsContainer.innerHTML = '';
+      
+      if (scoreData.records.length === 0) {
+        recordsContainer.innerHTML = `
+          <tr class="text-center text-gray-500">
+            <td colspan="3" class="py-4">暂无记录</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      // 取最近5条记录
+      const recentRecords = scoreData.records.slice(0, 5);
+      
+      recentRecords.forEach(record => {
+        let userColor = 'text-primary';
+        if (record.student === 'b') userColor = 'text-secondary';
+        if (record.student === 'c') userColor = 'text-warning';
+        
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50 text-xs';
+        row.innerHTML = `
+          <td class="py-2 text-gray-500">${formatTime(record.time)}</td>
+          <td class="py-2 ${userColor}">${record.student.toUpperCase()}</td>
+          <td class="py-2 text-success">+${record.points}</td>
+        `;
+        
+        recordsContainer.appendChild(row);
+      });
+    }
+
+    // 更新全部记录列表
+    function updateAllRecordsList() {
+      const recordsContainer = document.getElementById('all-records-list');
+      recordsContainer.innerHTML = '';
+      
+      if (scoreData.records.length === 0) {
+        recordsContainer.innerHTML = `
+          <tr class="text-center text-gray-500">
+            <td colspan="5" class="py-8">暂无记录</td>
+          </tr>
+        `;
+        return;
+      }
+      
+      scoreData.records.forEach(record => {
+        let userColor = 'text-primary';
+        if (record.student === 'b') userColor = 'text-secondary';
+        if (record.student === 'c') userColor = 'text-warning';
+        
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50 text-xs';
+        row.innerHTML = `
+          <td class="py-2 text-gray-500">${formatTime(record.time)}</td>
+          <td class="py-2 ${userColor}">${record.student.toUpperCase()}</td>
+          <td class="py-2">${record.task}</td>
+          <td class="py-2 text-success">+${record.points}</td>
+          <td class="py-2">
+            <button class="view-image-btn text-primary hover:text-primary/80 btn-effect" data-image="${record.image}">
+              <i class="fa fa-image"></i>
+            </button>
+          </td>
+        `;
+        
+        recordsContainer.appendChild(row);
+      });
+      
+      // 为图片查看按钮添加事件
+      document.querySelectorAll('.view-image-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const imageSrc = this.getAttribute('data-image');
+          document.getElementById('modal-image').src = imageSrc;
+          document.getElementById('image-modal').classList.remove('hidden');
+        });
+      });
+    }
+
+    // 格式化时间显示
+    function formatTime(timeStr) {
+      // 简化时间显示，只保留时分和日期
+      const date = new Date(timeStr);
+      return date.toLocaleString('zh-CN', {
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    // 隐藏图片查看弹窗
+    function hideImageModal() {
+      document.getElementById('image-modal').classList.add('hidden');
+    }
+
+    // 显示自定义积分弹窗
+    function showCustomScoreModal(student) {
+      currentUserForCustom = student;
+      document.getElementById('custom-score-modal').classList.remove('hidden');
+      document.getElementById('custom-score').focus();
+    }
+
+    // 隐藏自定义积分弹窗
+    function hideCustomScoreModal() {
+      document.getElementById('custom-score-modal').classList.add('hidden');
+    }
+
+    // 确认自定义积分
+    function confirmCustomScore() {
+      const score = parseInt(document.getElementById('custom-score').value);
+      const description = document.getElementById('task-description').value;
+      
+      if (isNaN(score) || score <= 0) {
+        alert('请输入有效的积分数量');
+        return;
+      }
+      
+      if (!description.trim()) {
+        alert('请输入任务说明');
+        return;
+      }
+      
+      addPoints(currentUserForCustom, score, description);
+      
+      // 重置表单并隐藏弹窗
+      document.getElementById('custom-score').value = 1;
+      document.getElementById('task-description').value = '';
+      hideCustomScoreModal();
+    }
+
+    // 保存数据到本地存储
+    function saveDataToLocalStorage() {
+      localStorage.setItem('scoreData', JSON.stringify(scoreData));
+    }
+
+    // 从本地存储加载数据
+    function loadDataFromLocalStorage() {
+      const savedData = localStorage.getItem('scoreData');
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        scoreData.a = parsedData.a || 0;
+        scoreData.b = parsedData.b || 0;
+        scoreData.c = parsedData.c || 0;
+        scoreData.records = parsedData.records || [];
+      }
+    }
+
+    // 存储当前进行自定义积分操作的用户
+    let currentUserForCustom = 'a';
+  </script>
+</body>
+</html>
